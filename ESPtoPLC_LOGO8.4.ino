@@ -46,7 +46,10 @@ WiFi.setSleep(false);
   P.displayReset(1);
   P.setIntensity(5); // Brillo de 0 a 15
   //P.displayZoneText(0,"CONECTANDO...", PA_CENTER, 100, 1000, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
-  P.displayZoneText(1,"CREDITO", PA_CENTER, 100, 1000, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
+  P.setZoneEffect(1, true, PA_FLIP_UD);
+  //P.setZoneEffect(0, true, PA_FLIP_LR);
+  P.setZoneEffect(1, true, PA_FLIP_LR);
+  P.displayZoneText(1,"CREDITO", PA_CENTER, 100, 1000, PA_SCROLL_RIGHT, PA_SCROLL_RIGHT);
    P.displayZoneText(0,"TIEMPO", PA_CENTER, 100, 1000, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
   xTaskCreatePinnedToCore(
     LoopMatriz,    // Función de la tarea
