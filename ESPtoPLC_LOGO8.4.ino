@@ -13,12 +13,13 @@ IPAddress local_IP(192, 168, 1, 150); // La IP que quieres para el ESP32
 IPAddress gateway(192, 168, 1, 110);    // La IP de tu router
 IPAddress subnet(255, 255, 255, 0);   // Máscara de subred típica
 IPAddress primaryDNS(192, 168, 1, 110);
+IPAddress logoIP(192, 168, 1, 100); // LA IP DE TU LOGO!
 
 MD_Parola P = MD_Parola(HARDWARE_TYPE, CS_PIN, MAX_DEVICES);
 
 // Configuración Modbus y Red
 ModbusIP mb;
-IPAddress logoIP(192, 168, 1, 100); // LA IP DE TU LOGO!
+
 
 void setup() {
   Serial.begin(115200);
@@ -46,11 +47,13 @@ WiFi.setSleep(false);
   P.displayReset(1);
   P.setIntensity(5); // Brillo de 0 a 15
   //P.displayZoneText(0,"CONECTANDO...", PA_CENTER, 100, 1000, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
-  P.setZoneEffect(1, true, PA_FLIP_UD);
+  P.setZoneEffect(0, true, PA_FLIP_UD);
   //P.setZoneEffect(0, true, PA_FLIP_LR);
-  P.setZoneEffect(1, true, PA_FLIP_LR);
-  P.displayZoneText(1,"CREDITO", PA_CENTER, 100, 1000, PA_SCROLL_RIGHT, PA_SCROLL_RIGHT);
-   P.displayZoneText(0,"TIEMPO", PA_CENTER, 100, 1000, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
+  P.setZoneEffect(0, true, PA_FLIP_LR);
+  // P.displayZoneText(1,"Credito", PA_CENTER, 100, 1000, PA_SCROLL_RIGHT, PA_SCROLL_RIGHT);
+  //P.displayZoneText(0,"Tiempo", PA_CENTER, 100, 1000, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
+  P.displayZoneText(1,"Credito", PA_CENTER, 100, 1000, PA_PRINT, PA_NO_EFFECT);
+  P.displayZoneText(0,"Tiempo", PA_CENTER, 100, 1000, PA_PRINT, PA_NO_EFFECT);
   xTaskCreatePinnedToCore(
     LoopMatriz,    // Función de la tarea
     "TareaMatriz", // Nombre
@@ -72,6 +75,10 @@ unsigned long ultimoChoque = 0;
 unsigned int registroActual = 0;
 int indiceRegistro = 0;
 int registroAPedir=0;
+unsigned long tiempoAnterior = 0;
+const long intervalo = 500;
+int reintentos=0;
+
 void loop() {
   mb.task();
   
@@ -117,14 +124,38 @@ void loop() {
       
       valorAnterior[i] = valorActual[i];
       //delay(500);
+      reintentos=0;
+      
   }
 //else Serial.println("no cambio!!");
 }
   }
 else {
     mb.connect(logoIP);
-    Serial.println("NADA QUE SE CONECTA!!!");
+    unsigned long tiempoActual = millis(); // Captura el tiempo actual
+    if (tiempoActual - tiempoAnterior >= intervalo) {
+    tiempoAnterior = tiempoActual;
+    
+    if (!mb.isConnected(logoIP)) {
+        Serial.println("Reintentando conexión Modbus...");
+        mb.disconnect(logoIP); // Limpiamos la sesión anterior
+        mb.connect(logoIP);
+        
+        reintentos++; 
+    }
+}
+
+// Solo si después de 10 o 20 reintentos sigue fallando,
+// podrías considerar el reinicio o una alerta.
+if (reintentos > 10) {
+    ESP.restart(); 
+}
+  
+
+    Serial.println("Conectando!!");
   }
+
+  
   
   delay(10);
 }
